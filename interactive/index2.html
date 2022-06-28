@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>Visualizing Autoencoders with Tensorflow.js</title>
+  </head>
+  <body>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/tensorflow/3.8.0/tf.min.js'></script>
+    <script>
+    var modelPath = 'model_2-decoder-js/model.json';
+    tf.loadLayersModel(modelPath).then(function(model) {
+      // convert 10, 50 into a vector
+      var y = tf.tensor2d([[0, 0]]);
+      // sample from region 10, 50 in latent space
+      var prediction = model.predict(y).dataSync();
+      // log the prediction to the browser console
+      console.log(prediction);
+    })
+    </script>
+  </body>
+</html>

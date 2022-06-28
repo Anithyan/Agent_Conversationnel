@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>Visualizing Autoencoders with Tensorflow.js</title>
+    <style>
+      html, body {margin: 0; height: 100%; width: 100%; overflow: hidden;}
+    </style>
+  </head>
+  <body>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/tensorflow/3.8.0/tf.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/97/three.min.js'></script>
+    <script src='https://duhaime.s3.amazonaws.com/blog/latent-spaces/Controls2D.js'></script>
+    <script src='https://duhaime.s3.amazonaws.com/blog/latent-spaces/ThreeWorld.js'></script>
+    <script src='https://threejs.org/examples/js/controls/TrackballControls.js'></script>
+    <script>
+    // get the point geometry
+    var container = document.querySelector('#celeba-scene')
+    function getGeometry(pred) {
+      const points1 = [];
+      const points2 = [];
+      const points3 = [];
+
+      const first = [0,1,8,9,10,11];
+      const second = [4,3,2,5,6,7]
+      const third = [8,12,13,14]
+
+      for (let x of first) {      
+          points1.push(new THREE.Vector3(pred[2*x],-pred[2*x+1], 0));
+          // geometry1.colors.push(new THREE.Color(0xff0000));
+        }
+      for (let x2 of second) { 
+             
+          points2.push(new THREE.Vector3(pred[2*x2],-pred[2*x2+1], 0));
+          // geometry2.colors.push(new THREE.Color(0x00ff00));
+        }
+      for (let x3 of third) {      
+        console.log(x3)
+          points3.push(new THREE.Vector3(pred[2*x3],-pred[2*x3+1], 0));
+          // geometry3.colors.push(new THREE.Color(0x0000ff));
+        }
+      
+        
+      const geometry1 = new THREE.BufferGeometry().setFromPoints( points1 );
+      const geometry2 = new THREE.BufferGeometry().setFromPoints( points2 );
+      const geometry3 = new THREE.BufferGeometry().setFromPoints( points3 );
+
+      return [geometry1,geometry2,geometry3];
+    }
+
+    // sample from the latent space at obj.x, obj.y
+    function sample(obj) {
+      
+      obj.x = obj.x  * 20;
+      obj.y = obj.y  * 20;
+      // convert 10, 50 into a vector
+      var y = tf.tensor2d([[obj.x, obj.y]]);
+      // sample from region 10, 50 in latent space
+      var prediction = window.decoder.predict(y).dataSync();
+      // log the prediction to the browser console
+      // console.log(prediction)
+      geom = getGeometry(prediction);
+      console.log(geom)
+      // console.log(geom[1])
+      // console.log(geom[2])
+      line1.geometry = geom[0]
+      line2.geometry = geom[1]
+      line3.geometry = geom[2]
+    }
+
+    // add the mesh to the scene
+    var world = new ThreeWorld({ container: container, });
+    // var material = { linewidth: 1, color: 0x0000ff, linejoin:"round" };
+    const material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+    // var material = new THREE.LineBasicMaterial(material);
+    var init = new Array(16).fill(0);
+    var geom= getGeometry(init);
+    var line1 = new THREE.Line(geom[0], material);
+    world.scene.add(line1);
+    var line2 = new THREE.Line(geom[1], material);
+    world.scene.add(line2);
+    var line3 = new THREE.Line(geom[2], material);
+    world.scene.add(line3);
+    
+    world.render();
+
+    // load the decoder with tensorflow.js and render the scene
+    var modelPath = 'model_2-decoder-js/model.json';
+    tf.loadLayersModel(modelPath).then(function(model) {
+      window.decoder = model;
+      sample({x: 0, y: 0})
+      world.render();
+      new Controls2D({ onDrag: sample, container: container });
+
+    })
+    </script>
+
+<div id="celeba-scene">
+
+
+</div>
+
+  </body>
+</html>
